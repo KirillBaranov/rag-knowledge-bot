@@ -7,4 +7,5 @@ langchain-community==0.3.7
 langchain-text-splitters==0.3.2
 unstructured==0.16.10
 pypdf==5.1.0
+markdown==3.7
 pydantic-settings==2.6.1
