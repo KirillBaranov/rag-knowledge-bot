@@ -3,10 +3,10 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     OPENAI_API_KEY: str = "kblabs"
-    OPENAI_BASE_URL: str = "https://api.kblabs.ru/v1"
+    OPENAI_BASE_URL: str = "https://api.kblabs.ru/llm/v1"
     KBLABS_CLIENT_ID: str
     KBLABS_CLIENT_SECRET: str
-    MODEL: str = "gpt-4o-mini"
+    MODEL: str = "medium"
     EMBEDDING_MODEL: str = "text-embedding-3-small"
     CHROMA_PATH: str = "data/chroma"
     DOCS_PATH: str = "docs"

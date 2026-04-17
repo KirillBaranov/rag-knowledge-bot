@@ -5,6 +5,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 
 from app.config import settings
+from app.rag.embeddings import _get_token
 from app.rag.indexer import get_vectorstore
 
 
@@ -19,7 +20,7 @@ def build_chain():
         streaming=True,
         temperature=0,
         base_url=settings.OPENAI_BASE_URL,
-        api_key=settings.OPENAI_API_KEY,
+        api_key=_get_token(),
     )
 
     prompt = ChatPromptTemplate.from_messages([
