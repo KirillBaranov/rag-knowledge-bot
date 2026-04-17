@@ -4,6 +4,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     OPENAI_API_KEY: str = "kblabs"
     OPENAI_BASE_URL: str = "https://api.kblabs.ru/llm/v1"
+    KBLABS_GATEWAY_URL: str = "https://api.kblabs.ru"
     KBLABS_CLIENT_ID: str
     KBLABS_CLIENT_SECRET: str
     MODEL: str = "medium"

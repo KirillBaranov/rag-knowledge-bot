@@ -12,9 +12,8 @@ def _get_token() -> str:
     global _token, _token_expires_at
     if _token and time.time() < _token_expires_at - 30:
         return _token
-    base = settings.OPENAI_BASE_URL.rstrip("/").replace("/v1", "")
     resp = httpx.post(
-        f"{base}/auth/token",
+        f"{settings.KBLABS_GATEWAY_URL}/auth/token",
         json={"clientId": settings.KBLABS_CLIENT_ID, "clientSecret": settings.KBLABS_CLIENT_SECRET},
         timeout=10,
     )
@@ -33,9 +32,8 @@ class KBLabsEmbeddings(Embeddings):
         return self._embed(text)
 
     def _embed(self, text: str) -> list[float]:
-        base = settings.OPENAI_BASE_URL.rstrip("/").replace("/v1", "")
         resp = httpx.post(
-            f"{base}/platform/v1/embeddings/embed",
+            f"{settings.KBLABS_GATEWAY_URL}/platform/v1/embeddings/embed",
             headers={"Authorization": f"Bearer {_get_token()}"},
             json={"args": [text]},
             timeout=30,
