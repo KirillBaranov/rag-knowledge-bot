@@ -2,8 +2,10 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    OPENAI_API_KEY: str
+    OPENAI_API_KEY: str = "kblabs"
     OPENAI_BASE_URL: str = "https://api.kblabs.ru/v1"
+    KBLABS_CLIENT_ID: str
+    KBLABS_CLIENT_SECRET: str
     MODEL: str = "gpt-4o-mini"
     EMBEDDING_MODEL: str = "text-embedding-3-small"
     CHROMA_PATH: str = "data/chroma"

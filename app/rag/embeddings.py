@@ -1,7 +1,28 @@
+import time
 import httpx
 from langchain_core.embeddings import Embeddings
 
 from app.config import settings
+
+_token: str | None = None
+_token_expires_at: float = 0
+
+
+def _get_token() -> str:
+    global _token, _token_expires_at
+    if _token and time.time() < _token_expires_at - 30:
+        return _token
+    base = settings.OPENAI_BASE_URL.rstrip("/").replace("/v1", "")
+    resp = httpx.post(
+        f"{base}/auth/token",
+        json={"clientId": settings.KBLABS_CLIENT_ID, "clientSecret": settings.KBLABS_CLIENT_SECRET},
+        timeout=10,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    _token = data["accessToken"]
+    _token_expires_at = time.time() + data["expiresIn"]
+    return _token
 
 
 class KBLabsEmbeddings(Embeddings):
@@ -12,10 +33,10 @@ class KBLabsEmbeddings(Embeddings):
         return self._embed(text)
 
     def _embed(self, text: str) -> list[float]:
-        url = settings.OPENAI_BASE_URL.rstrip("/").replace("/v1", "") + "/platform/v1/embeddings/embed"
+        base = settings.OPENAI_BASE_URL.rstrip("/").replace("/v1", "")
         resp = httpx.post(
-            url,
-            headers={"Authorization": f"Bearer {settings.OPENAI_API_KEY}"},
+            f"{base}/platform/v1/embeddings/embed",
+            headers={"Authorization": f"Bearer {_get_token()}"},
             json={"args": [text]},
             timeout=30,
         )
