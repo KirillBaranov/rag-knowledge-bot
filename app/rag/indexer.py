@@ -19,7 +19,7 @@ def get_vectorstore() -> Chroma:
 
 
 def index_documents():
-    embeddings = OpenAIEmbeddings(model=settings.EMBEDDING_MODEL)
+    embeddings = OpenAIEmbeddings(model=settings.EMBEDDING_MODEL, base_url=settings.OPENAI_BASE_URL, api_key=settings.OPENAI_API_KEY)
     docs = load_docs(settings.DOCS_PATH)
     if not docs:
         print("No documents found to index.")
