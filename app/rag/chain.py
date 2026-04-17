@@ -14,7 +14,13 @@ def _format_docs(docs) -> str:
 
 def build_chain():
     retriever = get_vectorstore().as_retriever(search_kwargs={"k": 4})
-    llm = ChatOpenAI(model=settings.MODEL, streaming=True, temperature=0)
+    llm = ChatOpenAI(
+        model=settings.MODEL,
+        streaming=True,
+        temperature=0,
+        base_url=settings.OPENAI_BASE_URL,
+        api_key=settings.OPENAI_API_KEY,
+    )
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", settings.SYSTEM_PROMPT + "\n\nКонтекст из документов:\n{context}"),

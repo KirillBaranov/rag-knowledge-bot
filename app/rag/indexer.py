@@ -10,7 +10,7 @@ _vectorstore: Chroma | None = None
 def get_vectorstore() -> Chroma:
     global _vectorstore
     if _vectorstore is None:
-        embeddings = OpenAIEmbeddings(model=settings.EMBEDDING_MODEL)
+        embeddings = OpenAIEmbeddings(model=settings.EMBEDDING_MODEL, base_url=settings.OPENAI_BASE_URL, api_key=settings.OPENAI_API_KEY)
         _vectorstore = Chroma(
             persist_directory=settings.CHROMA_PATH,
             embedding_function=embeddings,
