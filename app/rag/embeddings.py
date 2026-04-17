@@ -20,4 +20,4 @@ class KBLabsEmbeddings(Embeddings):
             timeout=30,
         )
         resp.raise_for_status()
-        return resp.json()[0]
+        return resp.json()["result"]
