@@ -46,6 +46,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             set -e
+            docker logout ghcr.io || true
             cd ~/rag-knowledge-bot
             docker compose pull app
             docker compose up -d
