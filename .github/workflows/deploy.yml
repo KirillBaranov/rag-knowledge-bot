@@ -29,16 +29,13 @@ jobs:
           docker build -t $IMAGE .
           docker push $IMAGE
 
-      - name: Fix file permissions
-        run: chmod -R 644 docs/
-
-      - name: Write files to VPS
+      - name: Write compose file to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          source: docker-compose.yml,docs
+          source: docker-compose.yml
           target: ~/rag-knowledge-bot/
 
       - name: Deploy to VPS
