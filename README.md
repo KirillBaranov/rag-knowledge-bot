@@ -1,114 +1,147 @@
-# RAG Knowledge Bot — AI-помощник с базой знаний компании
+# rag-knowledge-bot
 
-Демо-проект для фриланс-портфолио. Показывает типовое решение под задачу:
-**корпоративный чат-бот, который отвечает строго по документам компании**.
+> A company knowledge base chatbot — answers employee questions strictly from uploaded documents, never makes facts up.
 
-Живое демо: [rag-demo.k-baranov.ru](https://rag-demo.k-baranov.ru)
+![Python](https://img.shields.io/badge/python-3.12-3776ab?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-streaming-009688?logo=fastapi&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-RAG-1c3c3c?logo=langchain&logoColor=white)
+![ChromaDB](https://img.shields.io/badge/ChromaDB-vector_store-f97316)
+![Docker](https://img.shields.io/badge/Docker-compose-2496ed?logo=docker&logoColor=white)
+[![KB Labs](https://img.shields.io/badge/infra-KB_Labs-6366f1)](https://kblabs.ru)
 
----
-
-## Что умеет
-
-- Отвечает на вопросы сотрудников по HR-политике, FAQ, документации, регламентам
-- Использует только загруженные документы — не придумывает факты
-- Стримит ответ в реальном времени (как ChatGPT)
-- Поддерживает `.txt`, `.md`, `.pdf` — просто кладёте файлы в папку `docs/`
-- Переиндексация при каждом запуске: добавили документ → перезапустили → бот знает
+**Live demo:** [rag-demo.k-baranov.ru](https://rag-demo.k-baranov.ru)
 
 ---
 
-## Стек
+## What it does
 
-| Слой | Технология |
-|---|---|
-| LLM | OpenAI GPT-4o-mini |
-| Embeddings | text-embedding-3-small |
-| Vector store | ChromaDB (локально, без внешних сервисов) |
-| RAG framework | LangChain |
-| Backend | FastAPI + streaming response |
-| Frontend | Vanilla HTML/JS (без фреймворков) |
-| Деплой | Docker + docker-compose |
+Drop company documents into `docs/` (`.txt`, `.md`, `.pdf`). On startup the app indexes them into a local ChromaDB vector store. Employees ask questions through a web chat — the bot retrieves the relevant chunks, feeds them to an LLM, and streams the answer back. If the answer isn't in the documents, it says so directly.
+
+```
+docs/ (txt · md · pdf)
+      │
+      ▼
+  LangChain loader + splitter
+      │
+      ▼
+  ChromaDB  ◀──── query embedding ◀──── user question
+      │
+      ▼  top-k chunks
+  LLM (streaming)
+      │
+      ▼
+  FastAPI  /api/ask  (SSE)
+      │
+      ▼
+  Browser chat UI
+```
 
 ---
 
-## Быстрый старт
+## Stack
+
+| Layer | Technology |
+|-------|------------|
+| LLM | OpenAI-compatible models via [KB Labs](https://kblabs.ru) |
+| Embeddings | text-embedding-3-small via [KB Labs](https://kblabs.ru) |
+| Vector store | ChromaDB (local, no external services) |
+| RAG | LangChain |
+| Backend | FastAPI + Server-Sent Events (streaming) |
+| Frontend | Vanilla HTML/JS — no build step |
+| Deployment | Docker + docker-compose |
+
+---
+
+## Quick start
 
 ```bash
-# 1. Клонировать репозиторий
 git clone https://github.com/KirillBaranov/rag-knowledge-bot
 cd rag-knowledge-bot
 
-# 2. Создать .env
-cp .env.example .env
-# вставить OPENAI_API_KEY
+cp .env.example .env          # set OPENAI_API_KEY (or compatible endpoint)
 
-# 3. Положить документы компании в папку docs/
-# Поддерживаются: .txt, .md, .pdf
+# Put your company documents here:
+cp your-docs/*.{md,pdf,txt} docs/
 
-# 4. Запустить
 docker compose up -d
 ```
 
-Открыть в браузере: http://localhost:8000
+Open `http://localhost:8000` — the bot indexes documents on first startup.
+
+**Adding documents:** drop a file into `docs/` and restart the container. No code changes, no re-deploy pipeline.
 
 ---
 
-## Структура проекта
+## Project structure
 
 ```
 app/
-├── config.py          # настройки (OpenAI ключ, модель, system prompt)
-├── main.py            # FastAPI app, индексация при старте
+├── config.py          # settings (API key, model, system prompt)
+├── main.py            # FastAPI app — indexes docs on startup
 ├── rag/
-│   ├── loader.py      # загрузка и разбивка документов на чанки
-│   ├── indexer.py     # создание и переиспользование векторного хранилища
-│   └── chain.py       # RAG-цепочка с async стримингом
+│   ├── loader.py      # loads and splits documents into chunks
+│   ├── embeddings.py  # embedding client (supports custom gateway + JWT auth)
+│   ├── indexer.py     # builds / reuses ChromaDB vector store
+│   └── chain.py       # RAG chain with async streaming
 └── api/
-    └── routes.py      # POST /api/ask — стриминг ответа
+    └── routes.py      # POST /api/ask — SSE streaming endpoint
 
 static/
-└── index.html         # чат-интерфейс
+└── index.html         # chat UI
 
-docs/                  # сюда кладёте документы компании
+docs/                  # put company documents here
 ```
 
 ---
 
-## Кастомизация под бизнес
+## Configuration
 
-**System prompt** меняется в `.env` — можно задать тон, ограничения, язык ответа.
+```env
+OPENAI_API_KEY=
+OPENAI_BASE_URL=https://api.kblabs.ru/llm/v1  # KB Labs Gateway (https://kblabs.ru) — used in this demo; any OpenAI-compatible endpoint works
+MODEL=gpt-4o-mini
+EMBEDDING_MODEL=text-embedding-3-small
+SYSTEM_PROMPT="Answer only from the provided documents. If the answer isn't there, say so."
+CHROMA_PATH=data/chroma
+DOCS_PATH=docs
+```
 
-**Добавить документы:** положить файл в `docs/`, перезапустить контейнер.
-
-**Модель:** по умолчанию `gpt-4o-mini` (быстро и дёшево). Для сложных задач — `gpt-4o`.
-
----
-
-## Кейс
-
-**Клиент:** IT-компания, 80 сотрудников.
-
-**Проблема:** HR получал одни и те же вопросы по 20–30 раз в неделю — отпуска, больничные, ДМС, командировки. Ответы были в регламентах, но сотрудники не читали 40-страничный PDF.
-
-**Решение:** RAG-бот на базе внутренних документов компании. Деплой на корпоративном VPS, доступ через браузер. Индексация новых документов — без разработчика, просто добавить файл.
-
-**Результат:**
-- Нагрузка на HR по типовым вопросам снизилась на 70%
-- Время ответа сотруднику — секунды вместо ожидания
-- Бот корректно отвечает «не знаю» на вопросы вне документов
-
-**Срок разработки:** 7 дней от ТЗ до деплоя.
+The system prompt is the primary control knob — set the language, tone, and boundaries without touching code.
 
 ---
 
-## Что добавляется в коммерческой версии
+## Use case
 
-- Авторизация (логин/пароль или SSO)
-- Разграничение документов по ролям (HR видит одно, менеджер — другое)
-- История диалогов
-- Загрузка документов через веб-интерфейс (без перезапуска)
-- Поддержка Telegram-интерфейса параллельно с веб
+**Context:** mid-size IT company, 80 employees. HR was answering the same 20–30 questions per week about vacation, sick leave, health insurance, and business travel — all of it already written in a 40-page PDF that nobody read.
+
+**Solution:** RAG bot backed by internal HR documents. Deployed on the company VPS, accessed via browser. Adding new documents requires no developer involvement — drop a file, restart the container.
+
+**Results:**
+- HR workload on routine questions dropped ~70%
+- Response time: seconds instead of waiting for HR to be available
+- The bot correctly responds "I don't have information about that" for out-of-scope questions
+
+**Delivery:** 7 days from brief to production.
 
 ---
 
-> Портфолио: [hire.k-baranov.ru](https://hire.k-baranov.ru) · TG: [@kirill_baranov](https://t.me/kirill_baranov)
+## What a production version adds
+
+- Authentication (login/password or SSO/LDAP)
+- Role-based document visibility (HR sees everything; managers see a subset)
+- Conversation history per user
+- Document upload via admin UI (no container restart)
+- Telegram interface alongside the web UI
+- Usage analytics (most-asked questions, unanswered queries)
+
+---
+
+## Infrastructure
+
+LLM inference and embeddings run on **[KB Labs](https://kblabs.ru)** — an infrastructure platform that puts every vendor behind one contract and one stable interface: LLM, embeddings, vector stores, cache, databases, event bus and more. Swap any vendor with a config line; service code never changes.
+
+This project uses KB Labs for both embeddings and chat completions. The same platform backs all other products in this portfolio.
+
+---
+
+> Portfolio: [hire.k-baranov.ru](https://hire.k-baranov.ru) · Telegram: [@kirill_baranov](https://t.me/kirill_baranov)
